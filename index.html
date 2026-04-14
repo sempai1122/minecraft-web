@@ -2,17 +2,114 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Minecraft Web Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StreamForge - Video Platform Prototype</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Minecraft-Style Web Game</h1>
-  <canvas id="gameCanvas" width="640" height="640"></canvas>
-  <p>
-    Move: WASD / Arrow Keys |
-    Left Click: Break Block |
-    Right Click: Place Block
-  </p>
+  <header class="topbar">
+    <div class="brand">StreamForge</div>
+    <form id="searchForm" class="search-wrap">
+      <input id="searchInput" type="search" placeholder="Search videos, creators, tags..." />
+      <button type="submit">Search</button>
+    </form>
+    <div class="profile-pill">Signed in as <strong>Alex Viewer</strong></div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar card">
+      <h2>Filters</h2>
+      <label>
+        Sort by
+        <select id="sortFilter">
+          <option value="relevance">Relevance</option>
+          <option value="date">Newest</option>
+          <option value="popularity">Most viewed</option>
+        </select>
+      </label>
+
+      <label>
+        Duration
+        <select id="durationFilter">
+          <option value="all">All</option>
+          <option value="short">Under 10 min</option>
+          <option value="medium">10-30 min</option>
+          <option value="long">Over 30 min</option>
+        </select>
+      </label>
+
+      <label>
+        Date published
+        <select id="dateFilter">
+          <option value="all">Any time</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="365">Last year</option>
+        </select>
+      </label>
+
+      <section>
+        <h3>My Lists</h3>
+        <button id="viewWatchLater" class="ghost">Watch later (<span id="watchLaterCount">0</span>)</button>
+        <button id="viewLiked" class="ghost">Liked videos (<span id="likedCount">0</span>)</button>
+      </section>
+
+      <section>
+        <h3>Architecture Highlights</h3>
+        <ul class="chip-list">
+          <li>Channels + subscribers</li>
+          <li>Upload metadata + privacy</li>
+          <li>Personalized feed ranking</li>
+          <li>Comments + engagement metrics</li>
+          <li>Moderation reporting flow</li>
+        </ul>
+      </section>
+    </aside>
+
+    <section class="content">
+      <article class="card hero">
+        <h1>Scalable Video Platform Demo</h1>
+        <p>
+          This front-end prototype models a creator/viewer ecosystem: channel subscriptions,
+          personalized recommendations, search filters, and engagement interactions.
+        </p>
+      </article>
+
+      <article class="card">
+        <h2>Subscribed Channels</h2>
+        <div id="channelGrid" class="channel-grid"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h2 id="feedTitle">Recommended For You</h2>
+          <p id="feedMeta"></p>
+        </div>
+        <div id="videoGrid" class="video-grid"></div>
+      </article>
+    </section>
+
+    <aside class="panel card" id="detailsPanel">
+      <h2>Video Details</h2>
+      <p>Select a video to view details, comments, and related content.</p>
+    </aside>
+  </main>
+
+  <template id="videoCardTemplate">
+    <article class="video-card">
+      <button class="thumb"></button>
+      <h3 class="title"></h3>
+      <p class="meta"></p>
+      <p class="desc"></p>
+      <div class="actions">
+        <button class="like-btn">👍</button>
+        <button class="dislike-btn">👎</button>
+        <button class="watchlater-btn">⏱ Watch later</button>
+        <button class="share-btn">🔗 Share</button>
+      </div>
+    </article>
+  </template>
+
   <script src="game.js"></script>
 </body>
 </html>
