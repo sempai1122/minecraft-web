@@ -1,12 +1,241 @@
-body {
-  background: #1e1e1e;
-  color: white;
-  text-align: center;
-  font-family: Arial, sans-serif;
+:root {
+  color-scheme: dark;
+  --bg: #0f1117;
+  --card: #171b24;
+  --card-2: #1e2430;
+  --text: #e8ebf4;
+  --muted: #a9b1c4;
+  --accent: #56c7ff;
+  --success: #66d48f;
+  --danger: #ff6a88;
+  --border: #2b3447;
 }
 
-canvas {
-  border: 3px solid #4caf50;
-  background: #87ceeb;
-  cursor: crosshair;
-  }
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: radial-gradient(circle at 10% 10%, #1b2030, var(--bg) 50%);
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(6px);
+  background: rgba(15, 17, 23, 0.9);
+  z-index: 20;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.search-wrap {
+  display: flex;
+  flex: 1;
+  max-width: 720px;
+}
+
+.search-wrap input,
+.search-wrap button,
+select,
+button {
+  border: 1px solid var(--border);
+  background: var(--card-2);
+  color: var(--text);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.search-wrap input {
+  flex: 1;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.search-wrap button {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  cursor: pointer;
+}
+
+.profile-pill {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 360px;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.sidebar, .panel {
+  height: calc(100vh - 98px);
+  position: sticky;
+  top: 82px;
+  overflow: auto;
+}
+
+.sidebar label {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.7rem 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ghost {
+  width: 100%;
+  margin-bottom: 0.45rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chip-list {
+  padding-left: 1.2rem;
+  color: var(--muted);
+}
+
+.content {
+  display: grid;
+  gap: 1rem;
+}
+
+.hero h1 { margin: 0 0 0.5rem; }
+.hero p { margin: 0; color: var(--muted); }
+
+.channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.channel-card {
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+  background: #151a23;
+}
+
+.channel-card h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.channel-card p { margin: 0.15rem 0; color: var(--muted); font-size: 0.87rem; }
+
+.sub-btn {
+  margin-top: 0.4rem;
+  width: 100%;
+  cursor: pointer;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.85rem;
+}
+
+.video-card {
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+  background: #141925;
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  margin-bottom: 0.6rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.title {
+  margin: 0.2rem 0;
+  font-size: 1rem;
+}
+
+.meta, .desc {
+  margin: 0.2rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.actions button { cursor: pointer; }
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+#feedMeta { color: var(--muted); margin: 0; }
+
+.video-detail .thumbnail {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 0.7rem;
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.video-detail h3 { margin: 0.4rem 0; }
+.video-detail p { color: var(--muted); }
+
+.comment-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.comment {
+  background: #121723;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.55rem;
+}
+
+.related-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.related-item {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  background: #151a24;
+}
+
+@media (max-width: 1180px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar, .panel { position: static; height: auto; }
+}
