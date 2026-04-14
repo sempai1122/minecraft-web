@@ -3,113 +3,125 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamForge - Video Platform Prototype</title>
+  <title>PulseChat • Real-time Messaging</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">StreamForge</div>
-    <form id="searchForm" class="search-wrap">
-      <input id="searchInput" type="search" placeholder="Search videos, creators, tags..." />
-      <button type="submit">Search</button>
-    </form>
-    <div class="profile-pill">Signed in as <strong>Alex Viewer</strong></div>
-  </header>
-
-  <main class="layout">
-    <aside class="sidebar card">
-      <h2>Filters</h2>
-      <label>
-        Sort by
-        <select id="sortFilter">
-          <option value="relevance">Relevance</option>
-          <option value="date">Newest</option>
-          <option value="popularity">Most viewed</option>
-        </select>
-      </label>
-
-      <label>
-        Duration
-        <select id="durationFilter">
-          <option value="all">All</option>
-          <option value="short">Under 10 min</option>
-          <option value="medium">10-30 min</option>
-          <option value="long">Over 30 min</option>
-        </select>
-      </label>
-
-      <label>
-        Date published
-        <select id="dateFilter">
-          <option value="all">Any time</option>
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="365">Last year</option>
-        </select>
-      </label>
-
-      <section>
-        <h3>My Lists</h3>
-        <button id="viewWatchLater" class="ghost">Watch later (<span id="watchLaterCount">0</span>)</button>
-        <button id="viewLiked" class="ghost">Liked videos (<span id="likedCount">0</span>)</button>
-      </section>
-
-      <section>
-        <h3>Architecture Highlights</h3>
-        <ul class="chip-list">
-          <li>Channels + subscribers</li>
-          <li>Upload metadata + privacy</li>
-          <li>Personalized feed ranking</li>
-          <li>Comments + engagement metrics</li>
-          <li>Moderation reporting flow</li>
-        </ul>
-      </section>
-    </aside>
-
-    <section class="content">
-      <article class="card hero">
-        <h1>Scalable Video Platform Demo</h1>
-        <p>
-          This front-end prototype models a creator/viewer ecosystem: channel subscriptions,
-          personalized recommendations, search filters, and engagement interactions.
-        </p>
-      </article>
-
-      <article class="card">
-        <h2>Subscribed Channels</h2>
-        <div id="channelGrid" class="channel-grid"></div>
-      </article>
-
-      <article class="card">
-        <div class="card-head">
-          <h2 id="feedTitle">Recommended For You</h2>
-          <p id="feedMeta"></p>
+  <div class="app-shell">
+    <aside class="left-panel card">
+      <div class="brand-row">
+        <div>
+          <p class="eyebrow">Realtime Messaging</p>
+          <h1>PulseChat</h1>
         </div>
-        <div id="videoGrid" class="video-grid"></div>
-      </article>
-    </section>
-
-    <aside class="panel card" id="detailsPanel">
-      <h2>Video Details</h2>
-      <p>Select a video to view details, comments, and related content.</p>
-    </aside>
-  </main>
-
-  <template id="videoCardTemplate">
-    <article class="video-card">
-      <button class="thumb"></button>
-      <h3 class="title"></h3>
-      <p class="meta"></p>
-      <p class="desc"></p>
-      <div class="actions">
-        <button class="like-btn">👍</button>
-        <button class="dislike-btn">👎</button>
-        <button class="watchlater-btn">⏱ Watch later</button>
-        <button class="share-btn">🔗 Share</button>
+        <span id="connectionState" class="status-dot offline">Offline</span>
       </div>
+
+      <form id="authForm" class="auth-form">
+        <h2>Sign in / Sign up</h2>
+        <input id="authUsername" type="text" placeholder="Username" required />
+        <input id="authEmail" type="email" placeholder="Email" required />
+        <input id="authPassword" type="password" placeholder="Password" minlength="6" required />
+        <div class="auth-actions">
+          <button type="submit" data-mode="signup">Create account</button>
+          <button type="button" id="loginBtn" class="ghost">Login</button>
+        </div>
+      </form>
+
+      <section class="profile card-inner hidden" id="profileSection">
+        <div class="profile-main">
+          <img id="profileAvatar" alt="avatar" />
+          <div>
+            <h2 id="profileName"></h2>
+            <p id="profileEmail"></p>
+          </div>
+        </div>
+        <label>
+          Status
+          <select id="statusSelect">
+            <option value="online">Online</option>
+            <option value="away">Away</option>
+            <option value="offline">Offline</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card-inner hidden" id="chatActions">
+        <button id="newDirectChatBtn">+ New Direct Chat</button>
+        <button id="newGroupBtn" class="ghost">+ New Group Chat</button>
+      </section>
+
+      <section class="card-inner hidden" id="conversationSection">
+        <div class="section-head">
+          <h3>Conversations</h3>
+          <span id="conversationCount">0</span>
+        </div>
+        <input id="conversationSearch" type="search" placeholder="Search chats..." />
+        <div id="conversationList" class="conversation-list"></div>
+      </section>
+    </aside>
+
+    <main class="chat-panel card">
+      <header class="chat-header">
+        <div>
+          <h2 id="chatTitle">Welcome 👋</h2>
+          <p id="chatSubtitle">Sign in to begin messaging.</p>
+        </div>
+        <div class="typing" id="typingIndicator"></div>
+      </header>
+
+      <section id="messageList" class="message-list"></section>
+
+      <form id="messageForm" class="message-form hidden">
+        <div class="message-tools">
+          <button type="button" id="emojiBtn" class="ghost">😀 Emoji</button>
+          <label class="ghost file-label">
+            📎 File
+            <input id="fileInput" type="file" hidden />
+          </label>
+          <span id="selectedFileName" class="file-name"></span>
+        </div>
+        <textarea id="messageInput" rows="2" placeholder="Type a message..." maxlength="2000"></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </main>
+
+    <aside class="right-panel card">
+      <h2>System Design Snapshot</h2>
+      <ul>
+        <li>WebSocket transport via Socket.io for low-latency bi-directional events.</li>
+        <li>REST APIs for auth, profile, history retrieval, and chat bootstrap.</li>
+        <li>Message IDs + server sequence numbers prevent dupes and preserve order.</li>
+        <li>Read receipts + typing events scoped to room participants.</li>
+        <li>File attachments stored as metadata + base64 payload (demo; swap cloud storage in production).</li>
+      </ul>
+      <p class="muted">Includes direct messages, optional group chat, timestamps, delivery/read status, presence, and responsive UI.</p>
+    </aside>
+  </div>
+
+  <template id="conversationTemplate">
+    <button class="conversation-item">
+      <div>
+        <p class="conversation-name"></p>
+        <p class="conversation-last"></p>
+      </div>
+      <div class="conversation-meta">
+        <span class="conversation-time"></span>
+        <span class="unread-badge hidden">0</span>
+      </div>
+    </button>
+  </template>
+
+  <template id="messageTemplate">
+    <article class="message">
+      <p class="message-author"></p>
+      <p class="message-body"></p>
+      <img class="message-image hidden" alt="attachment" />
+      <p class="message-meta"></p>
     </article>
   </template>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
