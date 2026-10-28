@@ -3,110 +3,109 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamForge - Video Platform Prototype</title>
+  <title>PulseChat · Real-Time Messaging</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">StreamForge</div>
-    <form id="searchForm" class="search-wrap">
-      <input id="searchInput" type="search" placeholder="Search videos, creators, tags..." />
-      <button type="submit">Search</button>
-    </form>
-    <div class="profile-pill">Signed in as <strong>Alex Viewer</strong></div>
-  </header>
-
-  <main class="layout">
-    <aside class="sidebar card">
-      <h2>Filters</h2>
-      <label>
-        Sort by
-        <select id="sortFilter">
-          <option value="relevance">Relevance</option>
-          <option value="date">Newest</option>
-          <option value="popularity">Most viewed</option>
-        </select>
-      </label>
-
-      <label>
-        Duration
-        <select id="durationFilter">
-          <option value="all">All</option>
-          <option value="short">Under 10 min</option>
-          <option value="medium">10-30 min</option>
-          <option value="long">Over 30 min</option>
-        </select>
-      </label>
-
-      <label>
-        Date published
-        <select id="dateFilter">
-          <option value="all">Any time</option>
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="365">Last year</option>
-        </select>
-      </label>
-
-      <section>
-        <h3>My Lists</h3>
-        <button id="viewWatchLater" class="ghost">Watch later (<span id="watchLaterCount">0</span>)</button>
-        <button id="viewLiked" class="ghost">Liked videos (<span id="likedCount">0</span>)</button>
-      </section>
-
-      <section>
-        <h3>Architecture Highlights</h3>
-        <ul class="chip-list">
-          <li>Channels + subscribers</li>
-          <li>Upload metadata + privacy</li>
-          <li>Personalized feed ranking</li>
-          <li>Comments + engagement metrics</li>
-          <li>Moderation reporting flow</li>
-        </ul>
-      </section>
-    </aside>
-
-    <section class="content">
-      <article class="card hero">
-        <h1>Scalable Video Platform Demo</h1>
-        <p>
-          This front-end prototype models a creator/viewer ecosystem: channel subscriptions,
-          personalized recommendations, search filters, and engagement interactions.
-        </p>
-      </article>
-
-      <article class="card">
-        <h2>Subscribed Channels</h2>
-        <div id="channelGrid" class="channel-grid"></div>
-      </article>
-
-      <article class="card">
-        <div class="card-head">
-          <h2 id="feedTitle">Recommended For You</h2>
-          <p id="feedMeta"></p>
+  <div class="app-shell">
+    <aside class="left-panel card">
+      <header class="brand-row">
+        <div>
+          <p class="eyebrow">Realtime Messaging</p>
+          <h1>PulseChat</h1>
         </div>
-        <div id="videoGrid" class="video-grid"></div>
-      </article>
-    </section>
+        <span class="dot online" title="Connection status"></span>
+      </header>
 
-    <aside class="panel card" id="detailsPanel">
-      <h2>Video Details</h2>
-      <p>Select a video to view details, comments, and related content.</p>
+      <section id="authSection" class="auth-box">
+        <h2>Sign up / Login</h2>
+        <form id="authForm">
+          <label>
+            Username
+            <input id="usernameInput" type="text" placeholder="e.g. alex" required />
+          </label>
+          <label>
+            Email (optional)
+            <input id="emailInput" type="email" placeholder="alex@example.com" />
+          </label>
+          <button type="submit">Continue</button>
+        </form>
+      </section>
+
+      <section id="profileSection" class="profile hidden">
+        <img id="profileAvatar" alt="avatar" />
+        <div>
+          <strong id="profileName"></strong>
+          <p id="profileEmail"></p>
+          <button id="toggleStatusBtn" class="ghost">Go Offline</button>
+        </div>
+      </section>
+
+      <section class="chat-list-wrap">
+        <div class="section-head">
+          <h2>Chats</h2>
+          <button id="newGroupBtn" class="ghost small">+ Group</button>
+        </div>
+        <div id="chatList" class="chat-list"></div>
+      </section>
     </aside>
-  </main>
 
-  <template id="videoCardTemplate">
-    <article class="video-card">
-      <button class="thumb"></button>
-      <h3 class="title"></h3>
-      <p class="meta"></p>
-      <p class="desc"></p>
-      <div class="actions">
-        <button class="like-btn">👍</button>
-        <button class="dislike-btn">👎</button>
-        <button class="watchlater-btn">⏱ Watch later</button>
-        <button class="share-btn">🔗 Share</button>
+    <main class="chat-panel card">
+      <header id="chatHeader" class="chat-header">
+        <div>
+          <h2>Select a conversation</h2>
+          <p>Pick a chat to start messaging.</p>
+        </div>
+      </header>
+
+      <section id="messageFeed" class="message-feed"></section>
+
+      <p id="typingIndicator" class="typing"></p>
+
+      <form id="composer" class="composer hidden">
+        <label class="file-label">
+          📎
+          <input id="fileInput" type="file" accept="image/*,.pdf,.txt" hidden />
+        </label>
+        <button type="button" id="emojiBtn" class="emoji-btn" aria-label="Add emoji">😊</button>
+        <textarea id="messageInput" rows="1" placeholder="Write a message..."></textarea>
+        <button type="submit" class="send-btn">Send</button>
+      </form>
+    </main>
+
+    <aside class="right-panel card">
+      <h2>System Design Notes</h2>
+      <ul>
+        <li>WebSocket-style event bus with message ACKs.</li>
+        <li>Ordered delivery using per-chat sequence IDs.</li>
+        <li>Read receipts: <em>delivered</em> → <em>seen</em>.</li>
+        <li>REST-style fetch mocked for history/profile loading.</li>
+        <li>Rate limiting and basic moderation checks.</li>
+      </ul>
+      <p class="muted">This browser demo simulates server behavior and can be backed by Node.js + Socket.io + MongoDB/PostgreSQL in production.</p>
+    </aside>
+  </div>
+
+  <template id="chatItemTemplate">
+    <button class="chat-item">
+      <img class="avatar" alt="avatar" />
+      <div class="chat-meta">
+        <strong class="chat-name"></strong>
+        <p class="chat-preview"></p>
       </div>
+      <span class="chat-time"></span>
+    </button>
+  </template>
+
+  <template id="messageTemplate">
+    <article class="bubble">
+      <header>
+        <strong class="sender"></strong>
+        <time class="timestamp"></time>
+      </header>
+      <p class="text"></p>
+      <div class="attachment"></div>
+      <footer class="receipt"></footer>
     </article>
   </template>
 

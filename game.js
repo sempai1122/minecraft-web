@@ -1,446 +1,424 @@
-const currentUser = {
-  id: "u-alex",
-  name: "Alex Viewer",
-  subscriptions: new Set(["c-blockcraft", "c-redstone-labs"]),
-  watchHistory: ["v-stream-arch", "v-ranking-ml", "v-cdn-ops", "v-redstone-hooks"],
-  liked: new Set(["v-stream-arch"]),
-  disliked: new Set(),
-  watchLater: new Set(["v-moderation-ai"])
-};
-
-const channels = [
-  {
-    id: "c-blockcraft",
-    name: "BlockCraft Academy",
-    description: "Creator growth, publishing strategy, and channel optimization.",
-    subscribers: 221340,
-    featured: "v-stream-arch",
-    posts: ["New creator studio walkthrough drops Friday."]
-  },
-  {
-    id: "c-redstone-labs",
-    name: "Redstone Labs",
-    description: "Hands-on system architecture and distributed infrastructure patterns.",
-    subscribers: 412870,
-    featured: "v-cdn-ops",
-    posts: ["Live Q&A: scaling feed ranking in production."]
-  },
-  {
-    id: "c-craft-vision",
-    name: "CraftVision",
-    description: "Recommendations, ranking models, and experimentation playbooks.",
-    subscribers: 95310,
-    featured: "v-ranking-ml",
-    posts: ["A/B testing pitfalls: new article and video now available."]
-  }
-];
-
-const videos = [
-  {
-    id: "v-stream-arch",
-    title: "Designing HLS/DASH Streaming at Scale",
-    channelId: "c-blockcraft",
-    description: "Adaptive bitrate, manifests, and edge delivery strategies for reliable playback.",
-    tags: ["streaming", "hls", "cdn"],
-    privacy: "public",
-    durationMin: 26,
-    views: 580221,
-    likes: 38200,
-    dislikes: 510,
-    watchTimeHours: 970000,
-    uploadedAt: "2026-04-10",
-    comments: [
-      { user: "infra_guru", text: "Great breakdown of startup latency tradeoffs." },
-      { user: "edge_master", text: "Would love a deep dive on multi-CDN routing." }
-    ]
-  },
-  {
-    id: "v-cdn-ops",
-    title: "CDN Caching Patterns for Video Platforms",
-    channelId: "c-redstone-labs",
-    description: "Hot path optimization, signed URL flow, and segment cache invalidation.",
-    tags: ["cdn", "performance", "security"],
-    privacy: "public",
-    durationMin: 14,
-    views: 331900,
-    likes: 21840,
-    dislikes: 244,
-    watchTimeHours: 488000,
-    uploadedAt: "2026-03-29",
-    comments: [
-      { user: "packetqueen", text: "This helped us tune our edge TTLs." }
-    ]
-  },
-  {
-    id: "v-ranking-ml",
-    title: "Recommendation Ranking: Candidate Retrieval to Re-Ranking",
-    channelId: "c-craft-vision",
-    description: "From collaborative filtering to feature-rich ranking in low-latency serving stacks.",
-    tags: ["recommendation", "ml", "ranking"],
-    privacy: "public",
-    durationMin: 34,
-    views: 740112,
-    likes: 47550,
-    dislikes: 603,
-    watchTimeHours: 1550000,
-    uploadedAt: "2026-04-08",
-    comments: [
-      { user: "modelsmith", text: "Useful section on diversity constraints." },
-      { user: "gradstudent42", text: "Can you release a feature store schema sample?" }
-    ]
-  },
-  {
-    id: "v-moderation-ai",
-    title: "Automated Moderation Pipelines with Human Review",
-    channelId: "c-redstone-labs",
-    description: "Policy tiers, ML scoring, reviewer queues, and escalation workflows.",
-    tags: ["moderation", "safety", "ml"],
-    privacy: "unlisted",
-    durationMin: 18,
-    views: 126112,
-    likes: 9320,
-    dislikes: 180,
-    watchTimeHours: 201000,
-    uploadedAt: "2026-02-15",
-    comments: [{ user: "policy_ops", text: "This mirrors our internal trust stack." }]
-  },
-  {
-    id: "v-upload-meta",
-    title: "Upload Service: Metadata, Privacy States, and Processing",
-    channelId: "c-blockcraft",
-    description: "Chunked upload, metadata validation, and publish workflows.",
-    tags: ["upload", "metadata", "backend"],
-    privacy: "private",
-    durationMin: 9,
-    views: 56200,
-    likes: 3410,
-    dislikes: 88,
-    watchTimeHours: 89000,
-    uploadedAt: "2026-04-13",
-    comments: [{ user: "videoeng", text: "Great framing of event contracts." }]
-  },
-  {
-    id: "v-redstone-hooks",
-    title: "Creator Analytics: Watch Time, Retention, and Growth Loops",
-    channelId: "c-blockcraft",
-    description: "Build dashboards for creators with actionable retention insights.",
-    tags: ["analytics", "creator-tools", "watch-time"],
-    privacy: "public",
-    durationMin: 22,
-    views: 286004,
-    likes: 15660,
-    dislikes: 340,
-    watchTimeHours: 392000,
-    uploadedAt: "2026-04-02",
-    comments: [{ user: "growthpm", text: "Retention cohort section was excellent." }]
-  }
-];
+const EMOJIS = ["😀", "😂", "🔥", "❤️", "👍", "🎉", "🚀", "🤝", "✅"];
 
 const state = {
-  query: "",
-  sort: "relevance",
-  duration: "all",
-  dateRange: "all",
-  mode: "recommended",
-  selectedVideoId: null
+  currentUser: null,
+  activeChatId: null,
+  chats: [],
+  typingTimers: new Map(),
+  rateWindow: []
 };
 
 const refs = {
-  channelGrid: document.getElementById("channelGrid"),
-  videoGrid: document.getElementById("videoGrid"),
-  feedTitle: document.getElementById("feedTitle"),
-  feedMeta: document.getElementById("feedMeta"),
-  detailsPanel: document.getElementById("detailsPanel"),
-  searchForm: document.getElementById("searchForm"),
-  searchInput: document.getElementById("searchInput"),
-  sortFilter: document.getElementById("sortFilter"),
-  durationFilter: document.getElementById("durationFilter"),
-  dateFilter: document.getElementById("dateFilter"),
-  watchLaterCount: document.getElementById("watchLaterCount"),
-  likedCount: document.getElementById("likedCount"),
-  viewWatchLater: document.getElementById("viewWatchLater"),
-  viewLiked: document.getElementById("viewLiked")
+  authSection: document.getElementById("authSection"),
+  authForm: document.getElementById("authForm"),
+  usernameInput: document.getElementById("usernameInput"),
+  emailInput: document.getElementById("emailInput"),
+  profileSection: document.getElementById("profileSection"),
+  profileAvatar: document.getElementById("profileAvatar"),
+  profileName: document.getElementById("profileName"),
+  profileEmail: document.getElementById("profileEmail"),
+  toggleStatusBtn: document.getElementById("toggleStatusBtn"),
+  chatList: document.getElementById("chatList"),
+  chatHeader: document.getElementById("chatHeader"),
+  messageFeed: document.getElementById("messageFeed"),
+  typingIndicator: document.getElementById("typingIndicator"),
+  composer: document.getElementById("composer"),
+  messageInput: document.getElementById("messageInput"),
+  emojiBtn: document.getElementById("emojiBtn"),
+  fileInput: document.getElementById("fileInput"),
+  newGroupBtn: document.getElementById("newGroupBtn")
 };
 
-function formatNumber(num) {
-  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(num);
+const users = [
+  { id: "u-alex", username: "Alex", avatar: avatarFromSeed("Alex"), status: "online", email: "alex@pulse.app" },
+  { id: "u-jamie", username: "Jamie", avatar: avatarFromSeed("Jamie"), status: "online", email: "jamie@pulse.app" },
+  { id: "u-lee", username: "Lee", avatar: avatarFromSeed("Lee"), status: "offline", email: "lee@pulse.app" },
+  { id: "u-sam", username: "Sam", avatar: avatarFromSeed("Sam"), status: "online", email: "sam@pulse.app" }
+];
+
+function seedChats() {
+  const now = Date.now();
+  return [
+    {
+      id: "c-jamie",
+      type: "direct",
+      name: "Jamie",
+      participantIds: ["u-alex", "u-jamie"],
+      messages: [
+        mkMessage("m1", "u-jamie", "Hey Alex — API gateway deploy is done.", now - 1000 * 60 * 24, "seen", 1),
+        mkMessage("m2", "u-alex", "Nice. Any latency impact?", now - 1000 * 60 * 18, "seen", 2),
+        mkMessage("m3", "u-jamie", "p95 improved by ~14ms 🎉", now - 1000 * 60 * 14, "delivered", 3)
+      ],
+      nextSeq: 4
+    },
+    {
+      id: "c-lee",
+      type: "direct",
+      name: "Lee",
+      participantIds: ["u-alex", "u-lee"],
+      messages: [
+        mkMessage("m4", "u-lee", "Can you review the moderation queue rules?", now - 1000 * 60 * 45, "seen", 1)
+      ],
+      nextSeq: 2
+    },
+    {
+      id: "g-product",
+      type: "group",
+      name: "Product Launch",
+      participantIds: ["u-alex", "u-jamie", "u-sam"],
+      messages: [
+        mkMessage("m5", "u-sam", "Kickoff at 3 PM UTC.", now - 1000 * 60 * 70, "seen", 1),
+        mkMessage("m6", "u-jamie", "Deck + demo script uploaded.", now - 1000 * 60 * 62, "seen", 2)
+      ],
+      nextSeq: 3
+    }
+  ];
 }
 
-function getChannelById(channelId) {
-  return channels.find(channel => channel.id === channelId);
+function mkMessage(id, senderId, text, sentAt, status, seq, attachment = null) {
+  return { id, senderId, text, sentAt, status, seq, attachment };
 }
 
-function dayDiff(fromDate) {
-  const now = new Date("2026-04-14T00:00:00Z");
-  const target = new Date(fromDate + "T00:00:00Z");
-  return Math.floor((now - target) / (1000 * 60 * 60 * 24));
+function avatarFromSeed(seed) {
+  const initials = encodeURIComponent(seed.slice(0, 2).toUpperCase());
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${initials}&radius=50&backgroundType=gradientLinear`;
 }
 
-function buildRecommendationScore(video) {
-  const channelBoost = currentUser.subscriptions.has(video.channelId) ? 1.6 : 1;
-  const historyBoost = currentUser.watchHistory.some(id => id === video.id)
-    ? 0.6
-    : video.tags.some(tag =>
-        currentUser.watchHistory
-          .map(watchedId => videos.find(v => v.id === watchedId))
-          .filter(Boolean)
-          .flatMap(v => v.tags)
-          .includes(tag)
-      )
-      ? 1.3
-      : 1;
-  const freshnessBoost = 1 + Math.max(0, 21 - dayDiff(video.uploadedAt)) / 50;
-  const popularityBoost = Math.log10(video.views + 10);
-  return channelBoost * historyBoost * freshnessBoost * popularityBoost;
+function findUser(id) {
+  return users.find(user => user.id === id);
 }
 
-function applyFilters(inputVideos) {
-  return inputVideos.filter(video => {
-    const query = state.query.trim().toLowerCase();
-    const searchable = [video.title, video.description, ...video.tags, getChannelById(video.channelId)?.name || ""].join(" ").toLowerCase();
-    const matchesQuery = !query || searchable.includes(query);
-
-    const durationMatch =
-      state.duration === "all" ||
-      (state.duration === "short" && video.durationMin < 10) ||
-      (state.duration === "medium" && video.durationMin >= 10 && video.durationMin <= 30) ||
-      (state.duration === "long" && video.durationMin > 30);
-
-    const ageDays = dayDiff(video.uploadedAt);
-    const dateMatch = state.dateRange === "all" || ageDays <= Number(state.dateRange);
-
-    return matchesQuery && durationMatch && dateMatch;
-  });
+function sanitize(text) {
+  return text.replace(/[<>]/g, "").trim();
 }
 
-function sortVideos(filtered) {
-  const ranked = filtered.map(video => ({ ...video, score: buildRecommendationScore(video) }));
-
-  if (state.sort === "date") {
-    return ranked.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
-  }
-
-  if (state.sort === "popularity") {
-    return ranked.sort((a, b) => b.views - a.views);
-  }
-
-  return ranked.sort((a, b) => b.score - a.score);
+function isRateLimited() {
+  const now = Date.now();
+  state.rateWindow = state.rateWindow.filter(ts => now - ts < 10_000);
+  if (state.rateWindow.length >= 6) return true;
+  state.rateWindow.push(now);
+  return false;
 }
 
-function getFeedVideos() {
-  if (state.mode === "watchLater") {
-    return videos.filter(video => currentUser.watchLater.has(video.id));
-  }
-  if (state.mode === "liked") {
-    return videos.filter(video => currentUser.liked.has(video.id));
-  }
-  return videos.filter(video => video.privacy !== "private");
+function moderateText(text) {
+  const banned = ["scam", "phish", "abuse"];
+  return !banned.some(word => text.toLowerCase().includes(word));
 }
 
-function renderChannels() {
-  refs.channelGrid.innerHTML = "";
-
-  channels.forEach(channel => {
-    const isSubscribed = currentUser.subscriptions.has(channel.id);
-    const el = document.createElement("article");
-    el.className = "channel-card";
-    el.innerHTML = `
-      <h3>${channel.name}</h3>
-      <p>${channel.description}</p>
-      <p><strong>${formatNumber(channel.subscribers)}</strong> subscribers</p>
-      <p>Update: ${channel.posts[0]}</p>
-      <button class="sub-btn" data-channel-id="${channel.id}">${isSubscribed ? "Subscribed" : "Subscribe"}</button>
-    `;
-    refs.channelGrid.appendChild(el);
-  });
-
-  refs.channelGrid.querySelectorAll(".sub-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const channelId = btn.dataset.channelId;
-      if (currentUser.subscriptions.has(channelId)) {
-        currentUser.subscriptions.delete(channelId);
-      } else {
-        currentUser.subscriptions.add(channelId);
-      }
-      renderChannels();
-      renderFeed();
-    });
-  });
+function getActiveChat() {
+  return state.chats.find(chat => chat.id === state.activeChatId);
 }
 
-function renderFeed() {
-  const filtered = applyFilters(getFeedVideos());
-  const sorted = sortVideos(filtered);
-  refs.videoGrid.innerHTML = "";
+function latestMessage(chat) {
+  return chat.messages.slice().sort((a, b) => b.seq - a.seq)[0];
+}
 
-  const template = document.getElementById("videoCardTemplate");
-  sorted.forEach(video => {
-    const channel = getChannelById(video.channelId);
+function formatTimestamp(timestamp) {
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(timestamp));
+}
+
+function renderProfile() {
+  if (!state.currentUser) return;
+  refs.authSection.classList.add("hidden");
+  refs.profileSection.classList.remove("hidden");
+  refs.profileAvatar.src = state.currentUser.avatar;
+  refs.profileName.textContent = state.currentUser.username;
+  refs.profileEmail.textContent = state.currentUser.email || "No email provided";
+  refs.toggleStatusBtn.textContent = state.currentUser.status === "online" ? "Go Offline" : "Go Online";
+}
+
+function renderChatList() {
+  refs.chatList.innerHTML = "";
+  const template = document.getElementById("chatItemTemplate");
+  const sorted = state.chats
+    .slice()
+    .sort((a, b) => (latestMessage(b)?.sentAt || 0) - (latestMessage(a)?.sentAt || 0));
+
+  sorted.forEach(chat => {
     const node = template.content.firstElementChild.cloneNode(true);
+    const partner = findUser(chat.participantIds.find(id => id !== state.currentUser.id));
+    const preview = latestMessage(chat);
 
-    const thumb = node.querySelector(".thumb");
-    thumb.textContent = `${video.title.slice(0, 26)}...`;
-    thumb.style.background = `linear-gradient(135deg, hsl(${(video.views % 360)}, 70%, 30%), #0c1020)`;
+    node.querySelector(".avatar").src = chat.type === "group" ? avatarFromSeed(chat.name) : partner?.avatar || avatarFromSeed(chat.name);
+    node.querySelector(".chat-name").textContent = chat.name;
+    node.querySelector(".chat-preview").textContent = preview ? preview.text || "Sent an attachment" : "No messages yet";
+    node.querySelector(".chat-time").textContent = preview ? formatTimestamp(preview.sentAt) : "";
 
-    node.querySelector(".title").textContent = video.title;
-    node.querySelector(".meta").textContent = `${channel?.name || "Unknown"} • ${formatNumber(video.views)} views • ${video.durationMin} min`;
-    node.querySelector(".desc").textContent = video.description;
-
-    node.querySelector(".like-btn").addEventListener("click", () => {
-      if (currentUser.liked.has(video.id)) currentUser.liked.delete(video.id);
-      else {
-        currentUser.liked.add(video.id);
-        currentUser.disliked.delete(video.id);
-      }
-      updateCounts();
+    if (chat.id === state.activeChatId) node.classList.add("active");
+    node.addEventListener("click", () => {
+      state.activeChatId = chat.id;
+      renderChatList();
+      renderActiveChat();
+      markSeen(chat.id);
     });
 
-    node.querySelector(".dislike-btn").addEventListener("click", () => {
-      if (currentUser.disliked.has(video.id)) currentUser.disliked.delete(video.id);
-      else {
-        currentUser.disliked.add(video.id);
-        currentUser.liked.delete(video.id);
-      }
-      updateCounts();
-    });
-
-    node.querySelector(".watchlater-btn").addEventListener("click", () => {
-      if (currentUser.watchLater.has(video.id)) currentUser.watchLater.delete(video.id);
-      else currentUser.watchLater.add(video.id);
-      updateCounts();
-      if (state.mode === "watchLater") renderFeed();
-    });
-
-    node.querySelector(".share-btn").addEventListener("click", () => {
-      const shareUrl = `${location.origin}${location.pathname}?video=${video.id}`;
-      navigator.clipboard?.writeText(shareUrl);
-      alert(`Share link copied:\n${shareUrl}`);
-    });
-
-    thumb.addEventListener("click", () => renderVideoDetail(video.id));
-    node.querySelector(".title").addEventListener("click", () => renderVideoDetail(video.id));
-
-    refs.videoGrid.appendChild(node);
+    refs.chatList.appendChild(node);
   });
+}
 
-  refs.feedMeta.textContent = `${sorted.length} videos returned`;
+function renderActiveChat() {
+  const chat = getActiveChat();
+  refs.messageFeed.innerHTML = "";
 
-  const modeLabel =
-    state.mode === "watchLater"
-      ? "Watch Later"
-      : state.mode === "liked"
-        ? "Liked Videos"
-        : "Recommended For You";
-  refs.feedTitle.textContent = modeLabel;
-
-  if (sorted.length && !state.selectedVideoId) {
-    renderVideoDetail(sorted[0].id);
+  if (!chat) {
+    refs.chatHeader.innerHTML = `<div><h2>Select a conversation</h2><p>Pick a chat to start messaging.</p></div>`;
+    refs.composer.classList.add("hidden");
+    refs.typingIndicator.textContent = "";
+    return;
   }
+
+  refs.composer.classList.remove("hidden");
+  const participants = chat.participantIds.map(findUser).filter(Boolean);
+  const statuses = participants
+    .filter(user => user.id !== state.currentUser.id)
+    .map(user => `${user.username} · ${user.status}`)
+    .join(" • ");
+
+  refs.chatHeader.innerHTML = `<div><h2>${chat.name}</h2><p>${statuses || "group"}</p></div>`;
+
+  const template = document.getElementById("messageTemplate");
+  chat.messages
+    .slice()
+    .sort((a, b) => a.seq - b.seq)
+    .forEach(message => {
+      const node = template.content.firstElementChild.cloneNode(true);
+      const sender = findUser(message.senderId);
+      node.querySelector(".sender").textContent = sender?.username || "Unknown";
+      node.querySelector(".timestamp").textContent = formatTimestamp(message.sentAt);
+      node.querySelector(".text").textContent = message.text;
+      node.querySelector(".receipt").textContent = message.senderId === state.currentUser.id ? `✓ ${message.status}` : "";
+
+      if (message.attachment) {
+        const attachmentEl = node.querySelector(".attachment");
+        if (message.attachment.kind === "image") {
+          const img = document.createElement("img");
+          img.src = message.attachment.url;
+          img.alt = message.attachment.name;
+          attachmentEl.appendChild(img);
+        } else {
+          const link = document.createElement("a");
+          link.href = message.attachment.url;
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          link.textContent = `📄 ${message.attachment.name}`;
+          attachmentEl.appendChild(link);
+        }
+      }
+
+      if (message.senderId === state.currentUser.id) {
+        node.classList.add("self");
+      }
+
+      refs.messageFeed.appendChild(node);
+    });
+
+  refs.messageFeed.scrollTop = refs.messageFeed.scrollHeight;
 }
 
-function getRelatedVideos(video) {
-  return videos
-    .filter(candidate => candidate.id !== video.id && candidate.privacy !== "private")
-    .map(candidate => {
-      const overlap = candidate.tags.filter(tag => video.tags.includes(tag)).length;
-      const sameChannel = candidate.channelId === video.channelId ? 1 : 0;
-      const score = overlap * 2 + sameChannel + Math.log10(candidate.views + 1);
-      return { candidate, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 4)
-    .map(item => item.candidate);
+function sendTypingSignal() {
+  const chat = getActiveChat();
+  if (!chat || chat.type !== "direct") return;
+
+  const otherUserId = chat.participantIds.find(id => id !== state.currentUser.id);
+  const otherUser = findUser(otherUserId);
+  if (!otherUser || otherUser.status === "offline") return;
+
+  refs.typingIndicator.textContent = `${otherUser.username} is typing...`;
+
+  clearTimeout(state.typingTimers.get(chat.id));
+  const timer = setTimeout(() => {
+    refs.typingIndicator.textContent = "";
+  }, 1200);
+  state.typingTimers.set(chat.id, timer);
 }
 
-function renderVideoDetail(videoId) {
-  const video = videos.find(v => v.id === videoId);
-  if (!video) return;
-  state.selectedVideoId = videoId;
-  const channel = getChannelById(video.channelId);
-  const related = getRelatedVideos(video);
+function queueDeliveryUpdate(chat, message) {
+  setTimeout(() => {
+    message.status = "delivered";
+    renderActiveChat();
+    renderChatList();
+  }, 350);
 
-  refs.detailsPanel.innerHTML = `
-    <div class="video-detail">
-      <h2>Now Viewing</h2>
-      <div class="thumbnail" style="background: linear-gradient(160deg, hsl(${(video.likes % 360)}, 70%, 32%), #090d18);">${video.durationMin} min</div>
-      <h3>${video.title}</h3>
-      <p><strong>${channel?.name || "Unknown"}</strong> • ${video.privacy.toUpperCase()}</p>
-      <p>${video.description}</p>
-      <p>
-        Views: <strong>${formatNumber(video.views)}</strong><br/>
-        Likes: <strong>${formatNumber(video.likes)}</strong> • Dislikes: <strong>${formatNumber(video.dislikes)}</strong><br/>
-        Watch time: <strong>${formatNumber(video.watchTimeHours)}</strong> hours
-      </p>
+  setTimeout(() => {
+    if (chat.id === state.activeChatId) {
+      message.status = "seen";
+      renderActiveChat();
+      renderChatList();
+    }
+  }, 1200);
+}
 
-      <h3>Comments (${video.comments.length})</h3>
-      <div class="comment-list">
-        ${video.comments.map(comment => `<article class="comment"><strong>@${comment.user}</strong><br/>${comment.text}</article>`).join("")}
-      </div>
+function markSeen(chatId) {
+  const chat = state.chats.find(item => item.id === chatId);
+  if (!chat) return;
 
-      <h3>Related Videos</h3>
-      <div class="related-list">
-        ${related.map(item => `<button class="related-item" data-related-id="${item.id}">${item.title}</button>`).join("")}
-      </div>
-
-      <h3>Moderation</h3>
-      <button id="reportContentBtn">Report content</button>
-    </div>
-  `;
-
-  refs.detailsPanel.querySelectorAll(".related-item").forEach(btn => {
-    btn.addEventListener("click", () => renderVideoDetail(btn.dataset.relatedId));
+  chat.messages.forEach(message => {
+    if (message.senderId !== state.currentUser.id) {
+      message.status = "seen";
+    }
   });
-
-  const reportBtn = document.getElementById("reportContentBtn");
-  reportBtn?.addEventListener("click", () => {
-    alert("Report submitted to moderation queue (demo flow).");
-  });
+  renderActiveChat();
 }
 
-function updateCounts() {
-  refs.watchLaterCount.textContent = String(currentUser.watchLater.size);
-  refs.likedCount.textContent = String(currentUser.liked.size);
+function maybeAutoReply(chat, prompt) {
+  if (chat.type !== "direct") return;
+  const recipientId = chat.participantIds.find(id => id !== state.currentUser.id);
+  const recipient = findUser(recipientId);
+  if (!recipient || recipient.status === "offline") return;
+
+  refs.typingIndicator.textContent = `${recipient.username} is typing...`;
+
+  setTimeout(() => {
+    refs.typingIndicator.textContent = "";
+    const reply = mkMessage(
+      `m-${crypto.randomUUID()}`,
+      recipient.id,
+      `Ack: ${prompt.slice(0, 80) || "Received your update."}`,
+      Date.now(),
+      "seen",
+      chat.nextSeq++
+    );
+
+    chat.messages.push(reply);
+    chat.messages.sort((a, b) => a.seq - b.seq);
+    renderActiveChat();
+    renderChatList();
+  }, 900 + Math.random() * 900);
+}
+
+function createAttachment(file) {
+  const url = URL.createObjectURL(file);
+  return {
+    name: file.name,
+    kind: file.type.startsWith("image/") ? "image" : "file",
+    url
+  };
+}
+
+function submitMessage(event) {
+  event.preventDefault();
+  const chat = getActiveChat();
+  if (!chat || !state.currentUser) return;
+
+  const text = sanitize(refs.messageInput.value);
+  const file = refs.fileInput.files[0];
+
+  if (!text && !file) return;
+  if (isRateLimited()) {
+    alert("Rate limit: wait a moment before sending more messages.");
+    return;
+  }
+  if (text && !moderateText(text)) {
+    alert("Message blocked by moderation rules in this demo.");
+    return;
+  }
+
+  const message = mkMessage(
+    `m-${crypto.randomUUID()}`,
+    state.currentUser.id,
+    text,
+    Date.now(),
+    "sending",
+    chat.nextSeq++,
+    file ? createAttachment(file) : null
+  );
+
+  chat.messages.push(message);
+  chat.messages.sort((a, b) => a.seq - b.seq);
+  refs.messageInput.value = "";
+  refs.fileInput.value = "";
+  refs.typingIndicator.textContent = "";
+  renderActiveChat();
+  renderChatList();
+
+  queueDeliveryUpdate(chat, message);
+  maybeAutoReply(chat, text);
+}
+
+function signIn(event) {
+  event.preventDefault();
+  const username = sanitize(refs.usernameInput.value);
+  if (!username) return;
+
+  const email = sanitize(refs.emailInput.value) || `${username.toLowerCase()}@pulse.app`;
+  state.currentUser = {
+    id: `u-${username.toLowerCase().replace(/\s+/g, "-")}`,
+    username,
+    email,
+    status: "online",
+    avatar: avatarFromSeed(username)
+  };
+
+  if (!users.find(user => user.id === state.currentUser.id)) {
+    users.unshift(state.currentUser);
+  }
+
+  state.chats = seedChats().map(chat => ({
+    ...chat,
+    participantIds: chat.participantIds.map(id => (id === "u-alex" ? state.currentUser.id : id)),
+    messages: chat.messages.map(message => ({
+      ...message,
+      senderId: message.senderId === "u-alex" ? state.currentUser.id : message.senderId
+    }))
+  }));
+
+  state.activeChatId = state.chats[0]?.id || null;
+  renderProfile();
+  renderChatList();
+  renderActiveChat();
+}
+
+function toggleStatus() {
+  if (!state.currentUser) return;
+  state.currentUser.status = state.currentUser.status === "online" ? "offline" : "online";
+  const realUser = users.find(user => user.id === state.currentUser.id);
+  if (realUser) realUser.status = state.currentUser.status;
+  refs.toggleStatusBtn.textContent = state.currentUser.status === "online" ? "Go Offline" : "Go Online";
+  renderActiveChat();
+}
+
+function createGroup() {
+  if (!state.currentUser) return;
+  const name = prompt("Group name:", "New Project Group");
+  if (!name) return;
+
+  const participant = users.find(user => user.id !== state.currentUser.id && user.status === "online");
+  const group = {
+    id: `g-${crypto.randomUUID()}`,
+    type: "group",
+    name: sanitize(name),
+    participantIds: [state.currentUser.id, participant?.id || "u-jamie"],
+    messages: [],
+    nextSeq: 1
+  };
+
+  state.chats.unshift(group);
+  state.activeChatId = group.id;
+  renderChatList();
+  renderActiveChat();
+}
+
+function insertEmoji() {
+  const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+  refs.messageInput.value += emoji;
+  refs.messageInput.focus();
+}
+
+function autoGrowComposer() {
+  refs.messageInput.style.height = "auto";
+  refs.messageInput.style.height = `${Math.min(refs.messageInput.scrollHeight, 130)}px`;
 }
 
 function wireEvents() {
-  refs.searchForm.addEventListener("submit", event => {
-    event.preventDefault();
-    state.query = refs.searchInput.value;
-    state.mode = "recommended";
-    renderFeed();
-  });
-
-  refs.sortFilter.addEventListener("change", () => {
-    state.sort = refs.sortFilter.value;
-    renderFeed();
-  });
-
-  refs.durationFilter.addEventListener("change", () => {
-    state.duration = refs.durationFilter.value;
-    renderFeed();
-  });
-
-  refs.dateFilter.addEventListener("change", () => {
-    state.dateRange = refs.dateFilter.value;
-    renderFeed();
-  });
-
-  refs.viewWatchLater.addEventListener("click", () => {
-    state.mode = "watchLater";
-    renderFeed();
-  });
-
-  refs.viewLiked.addEventListener("click", () => {
-    state.mode = "liked";
-    renderFeed();
+  refs.authForm.addEventListener("submit", signIn);
+  refs.composer.addEventListener("submit", submitMessage);
+  refs.toggleStatusBtn.addEventListener("click", toggleStatus);
+  refs.newGroupBtn.addEventListener("click", createGroup);
+  refs.emojiBtn.addEventListener("click", insertEmoji);
+  refs.messageInput.addEventListener("input", () => {
+    autoGrowComposer();
+    sendTypingSignal();
   });
 }
 
-function init() {
-  updateCounts();
-  renderChannels();
-  wireEvents();
-  renderFeed();
-}
-
-init();
+wireEvents();
